@@ -1,0 +1,22 @@
+pkgname=pinebookpro-firmware
+pkgver=20$(date +%y%m%d)
+pkgrel=1
+pkgdesc="Pinebook Pro firmware blobs"
+arch=('any')
+source=('brcmfmac43456-sdio.bin'
+	'brcmfmac43456-sdio.clm_blob'
+	'brcmfmac43456-sdio.txt'
+        'BCM4345C5.hcd')
+md5sums=('ca63a118d10e69d0f84d8e06bbbe9d4f'
+         'c5aeca0e33de4ae870986c517963fef7'
+	 'f66d81b3ebeb255057f593819fb017d0'
+         '4017a2bda950875f1fb3132b9ba7bbba')
+
+package() {
+    install -Dm644 "${srcdir}/brcmfmac43456-sdio.bin" -t "${pkgdir}/usr/lib/firmware/brcm/"
+    install -Dm644 "${srcdir}/brcmfmac43456-sdio.clm_blob" -t "${pkgdir}/usr/lib/firmware/brcm/"
+    install -Dm644 "${srcdir}/brcmfmac43456-sdio.txt" -t "${pkgdir}/usr/lib/firmware/brcm/"
+    install -Dm644 "${srcdir}/BCM4345C5.hcd" -t "${pkgdir}/usr/lib/firmware/brcm"
+    cd "${pkgdir}/usr/lib/firmware/brcm"
+    ln -sf brcmfmac43456-sdio.txt brcmfmac43456-sdio.pine64,pinebook-pro.txt
+}

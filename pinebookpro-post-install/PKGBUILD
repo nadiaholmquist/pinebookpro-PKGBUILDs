@@ -1,0 +1,19 @@
+# Maintainer : Dan Johansen <strit@manjaro.org>
+
+pkgname=pinebookpro-post-install
+pkgver=20$(date +%y%m%d)
+pkgrel=1
+pkgdesc="Pinebook Pro post install files"
+arch=('any')
+url="https://www.manjaro.org"
+conflicts=('pinebook-post-install')
+license=('GPL')
+source=("10-usb-kbd.hwdb"
+	"asound.state")
+md5sums=('cd33e32e8317d8a4e43e55d445aa9c69'
+         '9ba0779be24233aca54d4e692d854a5d')
+
+package() {
+    install -Dm644 "${srcdir}/10-usb-kbd.hwdb" -t "${pkgdir}/etc/udev/hwdb.d/"
+    install -Dm644 "${srcdir}/asound.state" -t "${pkgdir}/var/lib/alsa/"
+}
