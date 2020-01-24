@@ -11,17 +11,19 @@
 
 pkgname=mesa-git
 pkgdesc="an open-source implementation of the OpenGL specification, git version"
-pkgver=20.0.0_devel.119328.2028ac0985a
+pkgver=20.0.0_devel.119494.60f9b45802c
 pkgrel=1
-arch=('x86_64' 'aarch64')
+arch=('aarch64')
 makedepends=('git' 'python-mako' 'xorgproto'
-              'libxml2' 'libx11'  'libvdpau' 'libva' 'elfutils' 'libomxil-bellagio' 'libxrandr'
-              'ocl-icd' 'vulkan-icd-loader' 'libgcrypt'  'wayland' 'wayland-protocols' 'meson' 'ninja')
+              'libxml2' 'libx11' 'elfutils' 'libxrandr'
+              'libgcrypt'  'wayland' 'wayland-protocols' 'meson' 'ninja'
+              'llvm' 'clang')
 depends=('libdrm' 'libxxf86vm' 'libxdamage' 'libxshmfence' 'libelf'
-         'libomxil-bellagio' 'libunwind' 'libglvnd' 'wayland' 'lm_sensors' 'libclc' 'glslang')
+         'libunwind' 'libglvnd' 'wayland' 'lm_sensors' 'libclc' 'glslang'
+         'llvm-libs')
 optdepends=('opengl-man-pages: for the OpenGL API man pages')
-provides=(mesa=$pkgver-$pkgrel vulkan-intel=$pkgver-$pkgrel vulkan-radeon=$pkgver-$pkgrel vulkan-mesa-layer=$pkgver-$pkgrel  libva-mesa-driver=$pkgver-$pkgrel mesa-vdpau=$pkgver-$pkgrel vulkan-driver opencl- opengl-driver opencl-driver)
-conflicts=('mesa' 'opencl-mesa' 'vulkan-intel' 'vulkan-radeon' 'vulkan-mesa-layer' 'libva-mesa-driver' 'mesa-vdpau')
+provides=(mesa=$pkgver-$pkgrel opengl-driver)
+conflicts=('mesa')
 #options=('!strip')
 url="https://www.mesa3d.org"
 license=('custom')
@@ -35,56 +37,12 @@ sha512sums=('SKIP'
 
 # NINJAFLAGS is an env var used to pass commandline options to ninja
 # NOTE: It's your responbility to validate the value of $NINJAFLAGS. If unsure, don't set it.
-
-# MESA_WHICH_LLVM is an environment variable used to determine which llvm package tree is used to built mesa-git against.
-# Adding a line to ~/.bashrc  that sets this value is the simplest way to ensure a specific choice.
-#
-# 1: llvm-minimal-git (aur) preferred value
-# 2: AUR llvm-git
-# 3: llvm-git from LordHeavy unofficial repo 
-# 4  llvm (stable from extra) Default value
-# 
-
-if [[ ! $MESA_WHICH_LLVM ]] ; then
-    MESA_WHICH_LLVM=4
-fi
-
-case $MESA_WHICH_LLVM in
-    1)
-        # aur llvm-minimal-git
-        makedepends+=('llvm-minimal-git')
-        depends+=('llvm-libs-minimal-git')
-        ;;
-    2)
-        # aur llvm-git
-        # depending on aur-llvm-* to avoid mixup with LH llvm-git
-        makedepends+=('aur-llvm-git')
-        depends+=('aur-llvm-libs-git')
-        ;;
-    3)
-        # mesa-git/llvm-git (lordheavy unofficial repo)
-        makedepends+=('llvm-git' 'clang-git')
-        depends+=('llvm-libs-git')
-        ;;
-    4)
-        # extra/llvm
-        makedepends+=(llvm clang)
-        depends+=(llvm-libs)
-        #makedepends+=(llvm=8.0.1 clang=8.0.1)
-        #depends+=(llvm-libs=8.0.1)
-        ;;
-    *)
-esac
-        
-        
-        
-        
-        
-#pkgver() {
-#    cd mesa
-#    read -r _ver <VERSION
-#    echo ${_ver/-/_}.$(git rev-list --count HEAD).$(git rev-parse --short HEAD)
-#}
+ 
+pkgver() {
+	cd mesa
+	read -r _ver <VERSION
+	echo ${_ver/-/_}.$(git rev-list --count HEAD).$(git rev-parse --short HEAD)
+}
 
 prepare() {
     # although removing _build folder in build() function feels more natural,
@@ -92,59 +50,46 @@ prepare() {
     if [  -d _build ]; then
         rm -rf _build
     fi
-
-    cd "${srcdir}"
-    git revert 3ba16d36c98 
+	cd mesa
+#	git revert 3ba16d36c98
 }
 
 build() {
-#CFLAGS="-Og -g3"
-#CXXFLAGS="-Og -g3"
-  MESON_OPT="-D asm=false"
-  case "${CARCH}" in
-    armv6h)  GALLIUM=",vc4" ;;
-    armv7h)  GALLIUM=",etnaviv,kmsro,lima,panfrost,tegra,vc4" ;;
-    aarch64) GALLIUM=",kmsro,lima,panfrost,v3d,vc4" ;;
-  esac
-  
-    arch-meson mesa _build \
-    -D b_lto=true \
-    -D b_ndebug=true \
-    -D platforms=x11,wayland,drm,surfaceless \
-    -D dri-drivers=nouveau \
-    -D gallium-drivers=freedreno,nouveau,swrast,virgl${GALLIUM} \
-    -D vulkan-drivers= \
-    -D dri3=true \
-    -D egl=true \
-    -D gallium-extra-hud=true \
-    -D gallium-nine=true \
-    -D gallium-omx=bellagio \
-    -D gallium-va=true \
-    -D gallium-vdpau=true \
-    -D gallium-xa=false \
-    -D gallium-xvmc=false \
-    -D gbm=true \
-    -D gles1=false \
-    -D gles2=true \
-    -D glvnd=true \
-    -D glx=dri \
-    -D libunwind=false \
-    -D llvm=true \
-    -D lmsensors=true \
-    -D osmesa=gallium \
-    -D shared-glapi=true \
-    -D valgrind=false $MESON_OPT
-       
-    meson configure _build
-    ninja  $NINJAFLAGS -C _build
+	MESON_OPT="-D asm=false"
+
+	arch-meson mesa _build \
+		-D b_lto=true \
+		-D b_ndebug=true \
+		-D platforms=x11,wayland,drm,surfaceless \
+		-D dri-drivers= \
+		-D gallium-drivers=swrast,virgl,kmsro,panfrost \
+		-D vulkan-drivers= \
+		-D dri3=true \
+		-D egl=true \
+		-D gallium-extra-hud=true \
+		-D gallium-xa=false \
+		-D gallium-xvmc=false \
+		-D gbm=true \
+		-D gles1=false \
+		-D gles2=true \
+		-D glvnd=true \
+		-D glx=dri \
+		-D libunwind=false \
+		-D llvm=true \
+		-D lmsensors=true \
+		-D osmesa=gallium \
+		-D shared-glapi=true \
+		-D valgrind=false $MESON_OPT
+
+	meson configure _build
+	ninja  $NINJAFLAGS -C _build
 }
 
 
 package() {
-  DESTDIR="$pkgdir" ninja $NINJAFLAGS -C _build install
+	DESTDIR="$pkgdir" ninja $NINJAFLAGS -C _build install
 
-  # indirect rendering
-  ln -s /usr/lib/libGLX_mesa.so.0 ${pkgdir}/usr/lib/libGLX_indirect.so.0
-
-  install -Dt "$pkgdir"/usr/share/licenses/$pkgname "$srcdir"/LICENSE
+# indirect rendering
+	ln -s /usr/lib/libGLX_mesa.so.0 ${pkgdir}/usr/lib/libGLX_indirect.so.0
+	install -Dt "$pkgdir"/usr/share/licenses/$pkgname "$srcdir"/LICENSE
 }
