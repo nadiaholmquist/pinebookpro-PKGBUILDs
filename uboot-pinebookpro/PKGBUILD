@@ -1,5 +1,5 @@
 
-pkgname=pinebookpro-uboot
+pkgname=uboot-pinebookpro
 pkgver=r62478.908d441fef
 pkgrel=1
 pkgdesc='Almost upstream u-boot for the Pinebook Pro.'
@@ -8,6 +8,7 @@ url='https://git.eno.space/pbp-uboot.git'
 license=('GPL2')
 install=${pkgname}.install
 makedepends=('make' 'gcc' 'dtc' 'uboot-tools')
+replaces=('pinebookpro-uboot')
 
 _atfcommit="22d12c4148c373932a7a81e5d1c59a767e143ac2"
 source=(
